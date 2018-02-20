@@ -43,6 +43,7 @@ class Searcher:
     
                     new = SearchNode(tuple[0])
                     searchNodesList.append(new)
+                    new.coordinates = tuple[3]
 
                     if tuple[1] not in labelsList:
 
@@ -58,7 +59,7 @@ class Searcher:
                         newSuccessor.successors.append((new, tuple[2]))
 
                         #now add the coordinates
-                        new.coordinates = tuple[3]
+                
                         newSuccessor.coordinates = tuple[4]
 
                     else:
@@ -89,6 +90,7 @@ class Searcher:
                                         j.successors.append((i, tuple[2]))
         for nodes in searchNodesList:
             print("%s is a node" % (nodes.label)) 
+            print(" its coordinates are %d, %d " % (nodes.coordinates[0], nodes.coordinates[1]) )
             print("It has the sucessors ")
             for successors in nodes.successors:
                 print("     %s with edge value %d" % (successors[0].label, successors[1]) )
