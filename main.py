@@ -1,6 +1,7 @@
 # import numpy as np
 # import scipy
 # import matplotlib
+from graphviz import GraphViz
 
 ##thes search node class with two attributes, the label, 
 #and value as the path cost from start to this node
@@ -130,7 +131,15 @@ class Searcher:
             print("%s" % (goals.label) )
 
         print("\n")
-        
+
+        ##Grapher functionality
+        # grapher = GraphViz()
+        # grapher.loadGraphFromFile("30node.txt")
+        # grapher.plot()
+        # grapher.markStart(startNode.label)
+        # grapher.markGoal(goalNodesArray[0].label)
+        # cont = input("Continue")
+
         #append the start node to the open list
         self.openList.append(startNode)
 
@@ -142,16 +151,34 @@ class Searcher:
         print("\n")
 
         #insert children of starting node at front
+        print("Insert into front")
         self.insert("front")
         
         #inser children of starting node at back
+        print("Inserted in back")
         self.insert("back")
 
         #insert children of starting node in order
+        print("Inserted in Order: ")
         self.insert("order")
 
-        #show children added
-        #self.showOpenList()
+        #Show handling of
+        print("Showing handling of duplicates")
+        self.successorArray = []
+        test1 = SearchNode("K")
+        test1.value = 500
+
+        test2 = SearchNode("C")
+        test2.value = 91
+
+        test3 = SearchNode("J")
+        test3.value = 10
+
+        self.successorArray.append(test1)
+        self.successorArray.append(test2)
+        self.successorArray.append(test3)
+        self.insert("order")
+
 
         if   searchType == "BFS":   
             return
@@ -171,6 +198,7 @@ class Searcher:
     
     #Straight Line Distance
     def hSLD(self):
+
         return
 
     #Hdir
@@ -207,21 +235,22 @@ class Searcher:
 
     def insert(self,insertType):
 
+        for i in self.openList:
+            for j in self.successorArray:
+                if i.label == j.label:
+                    self.successorArray.remove(j)
+
         if insertType == "front":
             for i in self.successorArray:
-                if i not in self.openList:
-                    self.openList.insert(0, i)
+                self.openList.insert(0, i)
 
         elif insertType == "back":  
-            for i in self.successorArray:
-                if i not in self.openList:
-                    self.openList.append(i)
+                self.openList.append(i)
         
         elif insertType == "order":
             #sort by value of cheapest node
             for i in self.successorArray:
-                if i not in self.openList:
-                    self.openList.append(i)
+                self.openList.append(i)
 
             self.openList.sort(key = lambda c: c.value)
 
@@ -233,7 +262,7 @@ class Searcher:
         self.showOpenList()
 
 def main():
-    mainSearch = Searcher("samplemap.txt")
+    mainSearch = Searcher("30node.txt")
     mainSearch.loadMap()
     mainSearch.performSearch("BFS", "U", ["T"], 0, 0)
 
