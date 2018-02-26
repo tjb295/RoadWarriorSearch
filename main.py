@@ -1,6 +1,6 @@
-# import numpy as np
-# import scipy
-# import matplotlib
+import numpy 
+from scipy.spatial import distance
+import matplotlib
 from graphviz import GraphViz
 
 ##thes search node class with two attributes, the label, 
@@ -33,6 +33,8 @@ class Searcher:
 
 
         self.successorArray = []
+
+        self.goalNodesArray = []
 
     def loadMap(self):
 
@@ -110,7 +112,7 @@ class Searcher:
 
     def performSearch(self, searchType, startNodeString, goalNodes, expansion, verbose):
     
-        goalNodesArray = []
+        
         startNode = ""
         #First state type of search and name of input file
         print("Performing %s search with map file %s \n" % (searchType, self.map))
@@ -123,22 +125,22 @@ class Searcher:
 
             for goals in goalNodes:
                 if goals == nodes.label:
-                    goalNodesArray.append(nodes)
+                    self.goalNodesArray.append(nodes)
 
         print("The starting node is node %s " % (startNode.label) )
         print("The goal nodes are as follows: ")
-        for goals in goalNodesArray:
+        for goals in self.goalNodesArray:
             print("%s" % (goals.label) )
 
         print("\n")
 
-        ##Grapher functionality
-        # grapher = GraphViz()
-        # grapher.loadGraphFromFile("30node.txt")
-        # grapher.plot()
-        # grapher.markStart(startNode.label)
-        # grapher.markGoal(goalNodesArray[0].label)
-        # cont = input("Continue")
+        #Grapher functionality
+        grapher = GraphViz()
+        grapher.loadGraphFromFile("30node.txt")
+        grapher.plot()
+        grapher.markStart(startNode.label)
+        grapher.markGoal(self.goalNodesArray[0].label)
+        cont = input("Continue")
 
         #append the start node to the open list
         self.openList.append(startNode)
@@ -179,9 +181,18 @@ class Searcher:
         self.successorArray.append(test3)
         self.insert("order")
 
+        ##hSLD testing
+        self.hSLD("V")
 
-        if   searchType == "BFS":   
-            return
+        self.hSLD("AC")
+
+        self.hSLD("J")
+
+        if   searchType == "BFS": 
+            #conduct bfs search
+            for i in range(len(expansion)):
+                bfs()  
+            
 
         elif searchType == "DFS":
             return
@@ -197,9 +208,22 @@ class Searcher:
             return 
     
     #Straight Line Distance
-    def hSLD(self):
+    def hSLD(self, node):
 
-        return
+        #calculate sldistance between two points
+        for i in self.searchNodesList:
+            if i.label == node:
+                pointA = i.coordinates
+                pointA =(pointA[0], pointA[1])
+
+        for i in self.goalNodesArray:
+            pointB = i.coordinates
+            goalPoint = (pointB[0],pointB[1])
+
+        dist = distance.euclidean(pointA, goalPoint)
+
+        print("Distance between points is %d" % (dist) )
+        print("\n")
 
     #Hdir
     def hDIR(self):
@@ -235,6 +259,7 @@ class Searcher:
 
     def insert(self,insertType):
 
+        #handle duplicate nodes being inserted
         for i in self.openList:
             for j in self.successorArray:
                 if i.label == j.label:
@@ -260,6 +285,25 @@ class Searcher:
             return
 
         self.showOpenList()
+    
+
+    def bfs(self):
+        #run bfs search to be recursively called
+
+        #generate successor array first
+        nodeToOpen = self.openList.pop()
+
+        #we want to check if this is the goal node
+        if nodeToOpen.label == goalNodesArray[0].label:
+            print("Success in Finding node ")
+
+        generateSuccessors(self, nodeToOpen)
+        #insert successors to front of open list
+        insert("back")
+
+        #now the currently explored node is at the front of the list\
+        
+
 
 def main():
     mainSearch = Searcher("30node.txt")
