@@ -14,6 +14,7 @@ class SearchNode:
         self.coordinates = ()
 
         self.successors = []
+
         #value is the path cost
         self.value = 0
 
@@ -160,7 +161,7 @@ class Searcher:
             self.dfs(grapher)
 
         elif searchType == "BEST":
-            return
+            self.best(grapher)
 
         elif searchType == "A*":
             return
@@ -199,15 +200,19 @@ class Searcher:
             print("label: %s, Value %d" % (open.label, open.value) )
         print("\n")
 
-    def generateSuccessors(self, currNode):
+    def generateSuccessors(self, currNode, isBest):
 
         self.successorArray = []
+
+        if isBest:
+            currNode.successors.sort(key = lambda c: c[1])
 
         for i in currNode.successors:
             i[0].value += i[1]
             self.successorArray.append(i[0])
 
-        self.successorArray.sort(key = lambda c: c.label)
+        if not isBest:
+            self.successorArray.sort(key = lambda c: c.label)
 
         for i in self.successorArray:
             print("Successor: %s with value %d" % (i.label, i.value) )
@@ -240,12 +245,11 @@ class Searcher:
                 self.openList.append(i)
         
         elif insertType == "order":
+            count = 0
             #sort by value of cheapest node
             for i in self.successorArray:
-                self.openList.append(i)
-
-            self.openList.sort(key = lambda c: c.value)
-
+                self.openList.insert(count, i)
+                count += 1
 
         else:
             print("Bad insert type")
@@ -270,7 +274,7 @@ class Searcher:
             print("Success in Finding node ")
             return
         self.prevNode = nodeToOpen.label
-        self.generateSuccessors(nodeToOpen)
+        self.generateSuccessors(nodeToOpen, False)
 
         for i in self.successorArray:
             edgeArray.append(i.label)
@@ -290,6 +294,8 @@ class Searcher:
 
         #first explore the node on the top of open list
         nodeToOpen = self.openList.pop(0)
+
+
         self.history.append(nodeToOpen.label)
         print(self.history)
 
@@ -301,7 +307,7 @@ class Searcher:
             return
 
         self.prevNode = nodeToOpen.label
-        self.generateSuccessors(nodeToOpen)
+        self.generateSuccessors(nodeToOpen, False)
 
         for i in self.successorArray:
             edgeArray.append(i.label)
@@ -314,13 +320,38 @@ class Searcher:
 
         self.dfs(grapher)
 
+    def best(self, grapher):
+        #Best first search implementation
+
+        nodeToOpen = self.openList.pop(0)
+        self.history.append(nodeToOpen.label)
+
+        grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
+
+        #check if we reached goal node
+        if nodeToOpen.label == self.goalNodesArray[0].label:
+            print("Success in finding node in best first")
+            return
+
+        self.prevNode = nodeToOpen.label
+
+        self.generateSuccessors(nodeToOpen, True)
+
+        self.insert("order")
+        self.showOpenList()
+
+        self.best(grapher)
+
+
+
+    
 
 
 def main():
     grapher = GraphViz()
     mainSearch = Searcher("30node.txt")
     mainSearch.loadMap()
-    mainSearch.performSearch("BFS", "U", ["T"], 0, 0, grapher)
+    mainSearch.performSearch("BEST", "U", ["T"], 0, 0, grapher)
     wait = input("wait")
 
 if __name__ == "__main__":
