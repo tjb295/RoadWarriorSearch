@@ -38,6 +38,8 @@ class Searcher:
 
         self.history = []
 
+        self.prevNode = ""
+
     def loadMap(self):
 
         #read in file line by line and begin inserting these into
@@ -205,7 +207,7 @@ class Searcher:
             i[0].value += i[1]
             self.successorArray.append(i[0])
 
-        #self.successorArray.sort(key = lambda c: c.label)
+        self.successorArray.sort(key = lambda c: c.label)
 
         for i in self.successorArray:
             print("Successor: %s with value %d" % (i.label, i.value) )
@@ -254,19 +256,25 @@ class Searcher:
 
     def bfs(self, grapher):
         #run bfs search to be recursively called
+        edgeArray = []
 
         #generate successor array first
         #self.showOpenList()
         nodeToOpen = self.openList.pop(0)
         self.history.append(nodeToOpen.label)
-        grapher.exploreNode(nodeToOpen.label, self.history)
+        grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
 
         #we want to check if this is the goal node
         if nodeToOpen.label == self.goalNodesArray[0].label:
             print("Success in Finding node ")
             return
-
+        self.prevNode = nodeToOpen.label
         self.generateSuccessors(nodeToOpen)
+
+        for i in self.successorArray:
+            edgeArray.append(i.label)
+
+        grapher.exploreEdges(nodeToOpen.label, edgeArray)
         #insert successors to front of open list
         self.insert("back")
         self.showOpenList()
@@ -279,7 +287,7 @@ def main():
     grapher = GraphViz()
     mainSearch = Searcher("30node.txt")
     mainSearch.loadMap()
-    mainSearch.performSearch("BFS", "U", ["Q"], 0, 0, grapher)
+    mainSearch.performSearch("BFS", "U", ["T"], 0, 0, grapher)
     wait = input("wait")
 
 if __name__ == "__main__":
