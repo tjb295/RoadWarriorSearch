@@ -36,6 +36,8 @@ class Searcher:
 
         self.goalNodesArray = []
 
+        self.history = []
+
     def loadMap(self):
 
         #read in file line by line and begin inserting these into
@@ -110,7 +112,7 @@ class Searcher:
         #     for successors in nodes.successors:
         #         print("     %s with edge value %d" % (successors[0].label, successors[1]) )
 
-    def performSearch(self, searchType, startNodeString, goalNodes, expansion, verbose):
+    def performSearch(self, searchType, startNodeString, goalNodes, expansion, verbose, grapher):
     
         
         startNode = ""
@@ -135,12 +137,11 @@ class Searcher:
         print("\n")
 
         #Grapher functionality
-        grapher = GraphViz()
         grapher.loadGraphFromFile("30node.txt")
         grapher.plot()
         grapher.markStart(startNode.label)
         grapher.markGoal(self.goalNodesArray[0].label)
-        cont = input("Continue")
+        
 
         #append the start node to the open list
         self.openList.append(startNode)
@@ -148,50 +149,9 @@ class Searcher:
         #Print the open list for part one 
         self.showOpenList()
 
-        #generate successors of starting node
-        self.generateSuccessors(startNode)
-        print("\n")
-
-        #insert children of starting node at front
-        print("Insert into front")
-        self.insert("front")
-        
-        #inser children of starting node at back
-        print("Inserted in back")
-        self.insert("back")
-
-        #insert children of starting node in order
-        print("Inserted in Order: ")
-        self.insert("order")
-
-        #Show handling of
-        print("Showing handling of duplicates")
-        self.successorArray = []
-        test1 = SearchNode("K")
-        test1.value = 500
-
-        test2 = SearchNode("C")
-        test2.value = 91
-
-        test3 = SearchNode("J")
-        test3.value = 10
-
-        self.successorArray.append(test1)
-        self.successorArray.append(test2)
-        self.successorArray.append(test3)
-        self.insert("order")
-
-        ##hSLD testing
-        self.hSLD("V")
-
-        self.hSLD("AC")
-
-        self.hSLD("J")
-
         if   searchType == "BFS": 
             #conduct bfs search
-            for i in range(len(expansion)):
-                bfs()  
+            self.bfs( grapher)  
             
 
         elif searchType == "DFS":
@@ -245,11 +205,11 @@ class Searcher:
             i[0].value += i[1]
             self.successorArray.append(i[0])
 
-        self.successorArray.sort(key = lambda c: c.label)
+        #self.successorArray.sort(key = lambda c: c.label)
 
         for i in self.successorArray:
             print("Successor: %s with value %d" % (i.label, i.value) )
-
+        print("\n")
 
 
         # self.openList.remove(currNode)
@@ -265,11 +225,17 @@ class Searcher:
                 if i.label == j.label:
                     self.successorArray.remove(j)
 
+        # for i in self.successorArray:
+        #     for j in self.history:
+        #         if i.label == j:
+        #             #self.successorArray.remove(i)
+
         if insertType == "front":
             for i in self.successorArray:
                 self.openList.insert(0, i)
 
         elif insertType == "back":  
+            for i in self.successorArray:
                 self.openList.append(i)
         
         elif insertType == "order":
@@ -284,31 +250,37 @@ class Searcher:
             print("Bad insert type")
             return
 
-        self.showOpenList()
     
 
-    def bfs(self):
+    def bfs(self, grapher):
         #run bfs search to be recursively called
 
         #generate successor array first
-        nodeToOpen = self.openList.pop()
+        #self.showOpenList()
+        nodeToOpen = self.openList.pop(0)
+        self.history.append(nodeToOpen.label)
+        grapher.exploreNode(nodeToOpen.label, self.history)
 
         #we want to check if this is the goal node
-        if nodeToOpen.label == goalNodesArray[0].label:
+        if nodeToOpen.label == self.goalNodesArray[0].label:
             print("Success in Finding node ")
+            return
 
-        generateSuccessors(self, nodeToOpen)
+        self.generateSuccessors(nodeToOpen)
         #insert successors to front of open list
-        insert("back")
+        self.insert("back")
+        self.showOpenList()
 
-        #now the currently explored node is at the front of the list\
-        
+        #now the currently explored node is at the front of the list
+        self.bfs(grapher)
 
 
 def main():
+    grapher = GraphViz()
     mainSearch = Searcher("30node.txt")
     mainSearch.loadMap()
-    mainSearch.performSearch("BFS", "U", ["T"], 0, 0)
+    mainSearch.performSearch("BFS", "U", ["Q"], 0, 0, grapher)
+    wait = input("wait")
 
 if __name__ == "__main__":
     main()
