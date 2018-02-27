@@ -157,7 +157,7 @@ class Searcher:
             
 
         elif searchType == "DFS":
-            return
+            self.dfs(grapher)
 
         elif searchType == "BEST":
             return
@@ -227,10 +227,9 @@ class Searcher:
                 if i.label == j.label:
                     self.successorArray.remove(j)
 
-        # for i in self.successorArray:
-        #     for j in self.history:
-        #         if i.label == j:
-        #             #self.successorArray.remove(i)
+        for i in self.successorArray:
+            if i.label in self.history:
+                self.successorArray.remove(i)
 
         if insertType == "front":
             for i in self.successorArray:
@@ -256,13 +255,15 @@ class Searcher:
 
     def bfs(self, grapher):
         #run bfs search to be recursively called
+        ##edge array will keep track of next to be explored edges
         edgeArray = []
 
         #generate successor array first
         #self.showOpenList()
         nodeToOpen = self.openList.pop(0)
         self.history.append(nodeToOpen.label)
-        grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
+        print(self.history)
+        #grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
 
         #we want to check if this is the goal node
         if nodeToOpen.label == self.goalNodesArray[0].label:
@@ -281,6 +282,38 @@ class Searcher:
 
         #now the currently explored node is at the front of the list
         self.bfs(grapher)
+
+
+    def dfs(self, grapher):
+        #Run the dfs search to be called recursively
+        edgeArray = []
+
+        #first explore the node on the top of open list
+        nodeToOpen = self.openList.pop(0)
+        self.history.append(nodeToOpen.label)
+        print(self.history)
+
+        grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
+        
+        #check if we have reached the goal node
+        if nodeToOpen.label == self.goalNodesArray[0].label:
+            print("Success in finding node in dfs")
+            return
+
+        self.prevNode = nodeToOpen.label
+        self.generateSuccessors(nodeToOpen)
+
+        for i in self.successorArray:
+            edgeArray.append(i.label)
+
+        #grapher.exploreEdges(nodeToOpen.label, edgeArray)
+
+        #insert into front since dfs iwll explore the first child of every new node opened
+        self.insert("front")
+        self.showOpenList()
+
+        self.dfs(grapher)
+
 
 
 def main():
