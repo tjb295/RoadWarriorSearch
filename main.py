@@ -45,6 +45,12 @@ class Searcher:
 
         self.path = []
 
+        self.verbose = False
+
+        self.numGoals = 0
+
+        self.finishedGoals = []
+
     def loadMap(self):
 
         #read in file line by line and begin inserting these into
@@ -125,7 +131,9 @@ class Searcher:
         startNode = ""
         #First state type of search and name of input file
         print("Performing %s search with map file %s \n" % (searchType, self.map))
-        
+        self.verbose = verbose
+
+        stats = SearchStats()
 
         #Setting start nodes and goal nodes
         for nodes in self.searchNodesList:
@@ -158,23 +166,23 @@ class Searcher:
 
         if   searchType == "BFS": 
             #conduct bfs search
-            self.bfs( grapher)  
+            self.bfs(grapher, stats)  
             
 
         elif searchType == "DFS":
-            self.dfs(grapher)
+            self.dfs(grapher, stats)
 
         elif searchType == "BEST":
-            self.best(grapher)
+            self.best(grapher, stats)
 
         elif searchType == "A*":
-            self.aStar(grapher)
+            self.aStar(grapher, stats)
 
         else:
             print("Error searchType is invalid \n")
             return 
 
-
+        ##output
         print("The total number of expansions were %d" % (self.expansions))
         print("The length of the path to goal is %d " % (self.calcPathCost()))
         print("The path is as follows: ", end="")
@@ -182,6 +190,12 @@ class Searcher:
             print("%s, " % (i.label), end ="")
         print("\n")
 
+        print("The average openlist size was %f " % (stats.calculcateAvgOpenlist()) )
+        print("The maximum openlist size was %d"  % (stats.maxOpenListSize) )
+        print("\n")
+
+        print("The average node branching factor is %f" % (stats.calculateAvgBranch()) )
+    
     def calcPathCost(self):
         num = 0
         for i in self.path:
@@ -220,7 +234,7 @@ class Searcher:
             print("label: %s, Value %d" % (open.label, open.value) )
         print("\n")
 
-    def generateSuccessors(self, currNode, isBest):
+    def generateSuccessors(self, currNode, isBest, stats):
 
         self.successorArray = []
 
@@ -244,7 +258,9 @@ class Searcher:
         # for i in successorArray:
         #     self.openList.append(i)
 
-    def insert(self,insertType):
+        stats.avgBranchFactor(self.successorArray)
+
+    def insert(self,insertType, stats):
 
         #handle duplicate nodes being inserted
         for i in self.openList:
@@ -275,9 +291,10 @@ class Searcher:
             print("Bad insert type")
             return
 
+        stats.openListSize(self.openList)
     
 
-    def bfs(self, grapher):
+    def bfs(self, grapher, stats):
         #run bfs search to be recursively called
         ##edge array will keep track of next to be explored edges
         edgeArray = []
@@ -292,24 +309,30 @@ class Searcher:
         self.history.append(nodeToOpen.label)
         grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
 
-        #we want to check if this is the goal node
-        if nodeToOpen.label == self.goalNodesArray[0].label:
-            print("Success in Finding node ")
-            print("The search ended at node: %s" % (nodeToOpen.label))
-            return
+        #check if we reached goal node
+        if nodeToOpen in self.goalNodesArray:
+            for i in self.goalNodesArray:
+                if nodeToOpen == i:
+                    self.finishedGoals.append(i)
+                    self.goalNodesArray.remove(i)
+            print("GoalHit")
+            if len(self.goalNodesArray) == 0:
+                print("Success in finding node in BFS")
+                print("The search ended at node: %s" % (nodeToOpen.label))
+                return
 
         self.prevNode = nodeToOpen.label
-        self.generateSuccessors(nodeToOpen, False)
+        self.generateSuccessors(nodeToOpen, False, stats)
 
         #grapher.exploreEdges(nodeToOpen.label, edgeArray)
         #insert successors to front of open list
-        self.insert("back")
+        self.insert("back", stats)
 
         #now the currently explored node is at the front of the list
-        self.bfs(grapher)
+        self.bfs(grapher, stats)
 
 
-    def dfs(self, grapher):
+    def dfs(self, grapher, stats):
         #Run the dfs search to be called recursively
         edgeArray = []
 
@@ -323,14 +346,20 @@ class Searcher:
 
         grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
         
-        #check if we have reached the goal node
-        if nodeToOpen.label == self.goalNodesArray[0].label:
-            print("Success in finding node in dfs")
-            print("The search ended at node: %s" % (nodeToOpen.label))
-            return
+        #check if we reached goal node
+        if nodeToOpen in self.goalNodesArray:
+            for i in self.goalNodesArray:
+                if nodeToOpen == i:
+                    self.finishedGoals.append(i)
+                    self.goalNodesArray.remove(i)
+            print("GoalHit")
+            if len(self.goalNodesArray) == 0:
+                print("Success in finding node in DFS")
+                print("The search ended at node: %s" % (nodeToOpen.label))
+                return
 
         self.prevNode = nodeToOpen.label
-        self.generateSuccessors(nodeToOpen, False)
+        self.generateSuccessors(nodeToOpen, False, stats)
 
         for i in self.successorArray:
             edgeArray.append(i.label)
@@ -338,11 +367,11 @@ class Searcher:
         #grapher.exploreEdges(nodeToOpen.label, edgeArray)
 
         #insert into front since dfs iwll explore the first child of every new node opened
-        self.insert("front")
+        self.insert("front", stats)
 
-        self.dfs(grapher)
+        self.dfs(grapher, stats)
 
-    def best(self, grapher):
+    def best(self, grapher, stats):
         #Best first search implementation
 
         nodeToOpen = self.openList.pop(0)
@@ -354,20 +383,26 @@ class Searcher:
         grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
 
         #check if we reached goal node
-        if nodeToOpen.label == self.goalNodesArray[0].label:
-            print("Success in finding node in best first")
-            print("The search ended at node: %s" % (nodeToOpen.label))
-            return
+        if nodeToOpen in self.goalNodesArray:
+            for i in self.goalNodesArray:
+                if nodeToOpen == i:
+                    self.finishedGoals.append(i)
+                    self.goalNodesArray.remove(i)
+            print("GoalHit")
+            if len(self.goalNodesArray) == 0:
+                print("Success in finding node in Best First")
+                print("The search ended at node: %s" % (nodeToOpen.label))
+                return
 
         self.prevNode = nodeToOpen.label
 
-        self.generateSuccessors(nodeToOpen, True)
+        self.generateSuccessors(nodeToOpen, True, stats)
 
-        self.insert("order")
+        self.insert("order", stats)
 
-        self.best(grapher)
+        self.best(grapher, stats)
 
-    def aStar(self, grapher):
+    def aStar(self, grapher, stats):
         #A* implementation
 
         nodeToOpen = self.openList.pop(0)
@@ -379,14 +414,20 @@ class Searcher:
         grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
 
         #check if we reached goal node
-        if nodeToOpen.label == self.goalNodesArray[0].label:
-            print("Success in finding node in A*")
-            print("The search ended at node: %s" % (nodeToOpen.label))
-            return
+        if nodeToOpen in self.goalNodesArray:
+            for i in self.goalNodesArray:
+                if nodeToOpen == i:
+                    self.finishedGoals.append(i)
+                    self.goalNodesArray.remove(i)
+            print("GoalHit")
+            if len(self.goalNodesArray) == 0:
+                print("Success in finding node in A*")
+                print("The search ended at node: %s" % (nodeToOpen.label))
+                return
 
         self.prevNode = nodeToOpen.label
 
-        self.generateSuccessors(nodeToOpen, False)
+        self.generateSuccessors(nodeToOpen, False, stats)
 
         #find the lowest SLD 
         mini = 0
@@ -400,22 +441,51 @@ class Searcher:
 
         self.successorArray.insert(0, minNode)
 
-        self.insert("order")
+        self.insert("order", stats)
 
-        self.aStar(grapher)
-
-
+        self.aStar(grapher, stats)
 
 
+class SearchStats:
 
-    
+    def __init__(self):
+        self.avgOpenListSize = 0
+        self.maxOpenListSize = 0
+        self.listTimesChecked = 0
+
+        self.avgDepth = 0
+        self.maxDepth = 0
+
+        self.avgBranchingFactor = 0
+        self.listBranchFChecked = 0
+
+    def openListSize(self, list):
+
+        #calculaate the open list size
+        self.listTimesChecked += 1
+        self.avgOpenListSize += len(list)
+
+        if self.maxOpenListSize == 0:
+            self.maxOpenListSize = len(list)
+        if len(list) > self.maxOpenListSize:
+            self.maxOpenListSize = len(list)
+
+    def calculcateAvgOpenlist(self):
+        return self.avgOpenListSize / self.listTimesChecked
+
+    def avgBranchFactor(self, list):
+        self.listBranchFChecked += 1
+        self.avgBranchingFactor += len(list)
+        
+    def calculateAvgBranch(self):
+        return self.avgBranchingFactor / self.listBranchFChecked
 
 
 def main():
     grapher = GraphViz()
     mainSearch = Searcher("30node.txt")
     mainSearch.loadMap()
-    mainSearch.performSearch("DFS", "U", ["E"], 0, 0, grapher)
+    mainSearch.performSearch("A*", "U", ["E", "T"], 0, False, grapher)
     wait = input("wait")
 
 if __name__ == "__main__":
