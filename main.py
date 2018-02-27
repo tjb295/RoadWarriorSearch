@@ -164,7 +164,7 @@ class Searcher:
             self.best(grapher)
 
         elif searchType == "A*":
-            return
+            self.aStar(grapher)
 
         else:
             print("Error searchType is invalid \n")
@@ -175,7 +175,7 @@ class Searcher:
 
         #calculate sldistance between two points
         for i in self.searchNodesList:
-            if i.label == node:
+            if i.label == node.label:
                 pointA = i.coordinates
                 pointA =(pointA[0], pointA[1])
 
@@ -184,6 +184,8 @@ class Searcher:
             goalPoint = (pointB[0],pointB[1])
 
         dist = distance.euclidean(pointA, goalPoint)
+
+        return dist
 
         print("Distance between points is %d" % (dist) )
         print("\n")
@@ -342,6 +344,41 @@ class Searcher:
 
         self.best(grapher)
 
+    def aStar(self, grapher):
+        #A* implementation
+
+        nodeToOpen = self.openList.pop(0)
+        self.history.append(nodeToOpen.label)
+
+        grapher.exploreNode(nodeToOpen.label, [self.prevNode, nodeToOpen.label])
+
+        #check if we reached goal node
+        if nodeToOpen.label == self.goalNodesArray[0].label:
+            print("Success in finding node in A*")
+            return
+
+        self.prevNode = nodeToOpen.label
+
+        self.generateSuccessors(nodeToOpen, False)
+
+        #find the lowest SLD 
+        mini = 0
+        minNode = nodeToOpen
+        for i in self.successorArray:
+            if mini == 0:
+                mini = self.hSLD(i)
+            if self.hSLD(i) < mini:
+                minNode = i
+                mini = self.hSLD(i)
+
+        self.successorArray.insert(0, minNode)
+
+        self.insert("order")
+
+        self.aStar(grapher)
+
+
+
 
 
     
@@ -351,7 +388,7 @@ def main():
     grapher = GraphViz()
     mainSearch = Searcher("30node.txt")
     mainSearch.loadMap()
-    mainSearch.performSearch("BEST", "U", ["T"], 0, 0, grapher)
+    mainSearch.performSearch("A*", "U", ["AB"], 0, 0, grapher)
     wait = input("wait")
 
 if __name__ == "__main__":
