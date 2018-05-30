@@ -1,3 +1,4 @@
+### Author: Thomas Back ####
 import numpy 
 from scipy.spatial import distance
 import matplotlib
